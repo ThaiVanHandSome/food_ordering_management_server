@@ -1,60 +1,52 @@
 import { Request, Response } from 'express';
-import * as categoryService from '../services/category.services';
+import categoryService from '~/services/category.services';
+import { responseSuccess, responseError } from '~/utils/response';
 
-export const getAllCategories = async (req: Request, res: Response) => {
+export const addCategory = async (req: Request, res: Response) => {
   try {
-    const categories = await categoryService.getAllCategories();
-    return res.status(200).json({
-      message: 'Lấy tất cả danh mục thành công',
-      data: categories
-    });
+    const { name } = req.body;
+    const result = await categoryService.addCategory(name);
+
+    return responseSuccess(res, result);
   } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.log(error);
+    return responseError(res, error);
   }
 };
 
 export const getCategoryById = async (req: Request, res: Response) => {
-  const categoryId = req.params.id;
   try {
-    const category = await categoryService.getCategoryById(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Danh mục không tồn tại' });
-    }
-    return res.status(200).json({
-      message: 'Lấy danh mục thành công',
-      data: category
-    });
+    const { id } = req.params;
+    const result = await categoryService.getCategoryById(id);
+    return responseSuccess(res, result);
   } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.log(error);
+    return responseError(res, error);
   }
 };
 
-export const addCategory = async (req: Request, res: Response) => {
-  const { name } = req.body;
+export const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const newCategory = await categoryService.addCategory(name);
-    return res.status(201).json({
-      message: 'Tạo danh mục thành công',
-      data: newCategory
-    });
+    const result = await categoryService.getAllCategories();
+    return responseSuccess(res, result);
   } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.log(error);
+    return responseError(res, error);
   }
 };
 
 export const updateCategory = async (req: Request, res: Response) => {
-  const categoryId = req.params.id;
-  const { name } = req.body;
   try {
-    const updatedCategory = await categoryService.updateCategory(categoryId, name);
-    if (!updatedCategory) {
-      return res.status(404).json({ message: 'Danh mục không tồn tại' });
-    }
-    return res.status(200).json({
-      message: 'Chỉnh sửa danh mục thành công',
-      data: updatedCategory
-    });
+    const { id } = req.params;
+    const { name } = req.body;
+    const result = await categoryService.updateCategory(id, name);
+
+
+    return responseSuccess(res, result);
   } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.log(error);
+    return responseError(res, error);
   }
 };
+
+

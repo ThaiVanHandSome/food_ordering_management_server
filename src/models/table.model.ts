@@ -17,7 +17,8 @@ const tableSchema = new Schema(
     current: {
       type: Number,
       required: true,
-      min: [0, 'Current must be greater or equal than 0']
+      min: [0, 'Current must be greater or equal than 0'],
+      default: 0
     },
     status: {
       type: String,
