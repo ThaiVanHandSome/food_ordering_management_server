@@ -14,7 +14,6 @@ const port = process.env.PORT ?? 8080
   const disconnected = chalk.bold.red
 
   const mongoUri = process.env.MONGO_URI
-  console.log('MongoDB URI:', mongoUri);
   if (!mongoUri) {
     console.error(error('MongoDB URI is not defined in the environment variables!'))
     process.exit(1)
