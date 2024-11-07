@@ -6,3 +6,9 @@ interface UserRequest {
   role: string
   cloudinaryUrl: string
 }
+
+interface UserQuery {
+  page: number
+  limit: number
+  email: string
+}
