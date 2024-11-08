@@ -1,5 +1,5 @@
 import { pick } from 'lodash'
-import { io, userSockets } from '~/functions/app'
+import { io, userSockets } from '~/app'
 import { STATUS } from '~/constants/httpStatus'
 import { orderStatus } from '~/enums/orderStatus.enum'
 import { OrderModel, ProductModel, TableModel } from '~/models'

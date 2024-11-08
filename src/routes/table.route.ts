@@ -6,7 +6,7 @@ import { wrapAsync } from '~/utils/response'
 const router = express.Router()
 
 router.post('/', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(addTable))
-router.post('/check-available-table', authMiddleware.verifyAccessToken, wrapAsync(checkAvailableTable))
+router.post('/check-available-table', wrapAsync(checkAvailableTable))
 router.get('/', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(getAllTables))
 router.patch('/:id', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(updateTable))
 router.delete('/:id', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(deleteTable))

@@ -1,7 +1,6 @@
-import 'tsconfig-paths/register'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
-import { server } from '~/functions/app'
+import { server } from '~/app'
 
 dotenv.config()
 
