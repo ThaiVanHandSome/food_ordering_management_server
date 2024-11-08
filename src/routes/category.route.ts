@@ -1,17 +1,13 @@
-import express from 'express';
-import {
-  getAllCategories,
-  getCategoryById,
-  addCategory,
-  updateCategory
-} from '../controllers/category.controller';
+import express from 'express'
+import { createCategory, deleteCategory, getAllCategories, updateCategory } from '~/controllers/category.controller'
+import authMiddleware from '~/middlewares/auth.middleware'
 import { wrapAsync } from '~/utils/response'
 
-const router = express.Router();
+const router = express.Router()
 
-router.get('/', wrapAsync(getAllCategories));
-router.get('/:id', wrapAsync(getCategoryById));
-router.post('/add', wrapAsync(addCategory));
-router.put('/:id', wrapAsync(updateCategory));
+router.get('/', wrapAsync(getAllCategories))
+router.post('/', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(createCategory))
+router.patch('/:id', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(updateCategory))
+router.delete('/:id', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(deleteCategory))
 
-export default router;
+export default router

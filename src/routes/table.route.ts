@@ -1,19 +1,14 @@
-import express from 'express';
-import {
-  getAllTables,
-  getTableById,
-  addTable,
-  updateTable,
-  deleteTable
-} from '../controllers/table.controller';
-import { wrapAsync } from '~/utils/response';
+import express from 'express'
+import { addTable, checkAvailableTable, deleteTable, getAllTables, updateTable } from '~/controllers/table.controller'
+import authMiddleware from '~/middlewares/auth.middleware'
+import { wrapAsync } from '~/utils/response'
 
-const router = express.Router();
+const router = express.Router()
 
-router.get('/', wrapAsync(getAllTables));
-router.get('/:id', wrapAsync(getTableById));
-router.post('/add', wrapAsync(addTable));
-router.put('/:id', wrapAsync(updateTable));
-router.delete('/:id', wrapAsync(deleteTable));
+router.post('/', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(addTable))
+router.post('/check-available-table', authMiddleware.verifyAccessToken, wrapAsync(checkAvailableTable))
+router.get('/', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(getAllTables))
+router.patch('/:id', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(updateTable))
+router.delete('/:id', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(deleteTable))
 
-export default router;
+export default router

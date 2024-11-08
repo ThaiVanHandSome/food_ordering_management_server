@@ -1,8 +1,19 @@
 import { pick } from 'lodash'
+import { io, userSockets } from '~/functions/app'
 import { STATUS } from '~/constants/httpStatus'
 import { orderStatus } from '~/enums/orderStatus.enum'
 import { OrderModel, ProductModel, TableModel } from '~/models'
 import { ErrorHandler } from '~/utils/response'
+
+export const orderStatusName = {
+  IN_PROGRESS: 'Đang xử lý',
+  COOKING: 'Đang nấu',
+  REJECTED: 'Từ chối',
+  SERVED: 'Đã phục vụ',
+  PAID: 'Đã thanh toán'
+} as const
+
+type OrderStatus = keyof typeof orderStatusName
 
 const addOrder = async (orderRequest: OrderRequest) => {
   try {
@@ -43,6 +54,10 @@ const addOrder = async (orderRequest: OrderRequest) => {
         $inc: { sold: product.buy_count }
       })
     }
+
+    io.emit('addOrder', {
+      message: 'Có một đơn hàng đã được đặt'
+    })
 
     return { message: 'Đặt hàng thành công' }
   } catch (error) {
@@ -217,9 +232,9 @@ const getStatisticsOrder = async (query: StatisticOrderQuery) => {
   }
 }
 
-const updateOrder = async (query: OrderUpdateQuery) => {
+const updateOrder = async (order_id: string, query: OrderUpdateQuery) => {
   try {
-    const { order_id, product_id, buy_count, status } = query
+    const { product_id, buy_count, status } = query
     if (!order_id) {
       throw new ErrorHandler(STATUS.NOT_ACCEPTABLE, 'Chưa cung cấp đơn hàng')
     }
@@ -249,9 +264,33 @@ const updateOrder = async (query: OrderUpdateQuery) => {
         new: true,
         runValidators: true
       }
-    )
-      .populate('product')
-      .lean()
+    ).lean()
+
+    const prod = await ProductModel.findById(existOrder.product).lean()
+    const newProd = await ProductModel.findById(updatedData?.product).lean()
+    const userSocket = userSockets[existOrder.customer_id]
+    if (userSocket) {
+      let message = ''
+      if (String(existOrder.product._id) !== product_id && !!product_id) {
+        message += `Món ăn ${prod?.name} của bạn đã được thay đổi thành ${newProd?.name} - `
+      }
+      if (existOrder.buy_count !== buy_count && !!buy_count) {
+        message += `Món ăn ${newProd?.name} của bạn đã được thay đổi số lượng thành ${buy_count} - `
+      }
+      if (existOrder.status !== status && !!status) {
+        let tempMessage = `Món ăn ${newProd?.name} của bạn ${orderStatusName[status as OrderStatus]}`
+        if (status === orderStatus.REJECTED) {
+          tempMessage = `Món ăn ${newProd?.name} của bạn bị ${orderStatusName[status as OrderStatus]}`
+        }
+        message += tempMessage + ' - '
+      }
+      const newData = await OrderModel.find({ customer_id: existOrder.customer_id }).lean()
+      userSocket.emit('orderUpdated', {
+        message,
+        data: newData
+      })
+    }
+
     const response = {
       message: 'Cập nhật đơn hàng thành công',
       data: updatedData
@@ -275,6 +314,15 @@ const deleteOrder = async (order_id: string) => {
     await OrderModel.deleteOne({
       _id: order_id
     })
+
+    const userSocket = userSockets[existOrder.customer_id]
+    const prod = await ProductModel.findById(existOrder.product).lean()
+    if (userSocket) {
+      userSocket.emit('orderUpdated', {
+        message: `Món ${prod?.name} đã bị xóa`
+      })
+    }
+
     const response = {
       message: 'Xóa đơn hàng thành công'
     }
@@ -302,6 +350,7 @@ const findCustomer = async (customer_id: string) => {
     return response
   } catch (error) {
     console.log(error)
+    throw error
   }
 }
 

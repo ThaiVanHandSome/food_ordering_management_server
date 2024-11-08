@@ -1,6 +1,7 @@
+import 'tsconfig-paths/register'
 import mongoose from 'mongoose'
-import app from '~/app'
 import dotenv from 'dotenv'
+import { server } from '~/functions/app'
 
 dotenv.config()
 
@@ -41,7 +42,7 @@ const port = process.env.PORT ?? 8080
     console.log(disconnected('Mongoose default connection is disconnected'))
   })
 
-  app.listen(port, () => {
+  server.listen(port, () => {
     console.log(chalk.green(`Server is running on port ${port}`))
   })
 })()

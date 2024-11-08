@@ -12,13 +12,14 @@ const tableSchema = new Schema(
     capacity: {
       type: Number,
       required: true,
+      default: 1,
       min: [1, 'Capacity must be greater than 0']
     },
     current: {
       type: Number,
       required: true,
-      min: [0, 'Current must be greater or equal than 0'],
-      default: 0
+      default: 0,
+      min: [0, 'Current must be greater or equal than 0']
     },
     status: {
       type: String,

@@ -30,7 +30,7 @@ export const getUserOrder = async (req: Request, res: Response) => {
 
 export const getStatisticsOrder = async (req: Request, res: Response) => {
   try {
-    const query: StatisticOrderQuery = req.query
+    const query: StatisticOrderQuery = req.query as unknown as StatisticOrderQuery
     const result = await orderService.getStatisticsOrder(query)
     return responseSuccess(res, result)
   } catch (error) {
@@ -51,8 +51,9 @@ export const getStatisticsTable = async (req: Request, res: Response) => {
 
 export const updateOrder = async (req: Request, res: Response) => {
   try {
-    const query: OrderUpdateQuery = req.query
-    const result = await orderService.updateOrder(query)
+    const query: OrderUpdateQuery = req.body
+    const { id } = req.params
+    const result = await orderService.updateOrder(id, query)
     return responseSuccess(res, result)
   } catch (error) {
     console.log(error)
