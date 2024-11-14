@@ -23,7 +23,7 @@ router.patch(
   wrapAsync(updateProduct)
 )
 router.get('/', wrapAsync(getProducts))
-router.post('/:id/increase-view', wrapAsync(increaseView))
+router.patch('/:id/increase-view', wrapAsync(increaseView))
 router.delete('/:id', authMiddleware.verifyAccessToken, authMiddleware.verifyAdmin, wrapAsync(deleteProduct))
 
 export default router
