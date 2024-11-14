@@ -1,10 +1,19 @@
 import express from 'express'
-import { createUser, getUsers, updateUser } from '~/controllers/user.controller'
+import { createUser, getMe, getUsers, updateMe, updateMyPassword, updateUser } from '~/controllers/user.controller'
 import authMiddleware from '~/middlewares/auth.middleware'
 import { upload, uploadImageToCloudinary } from '~/middlewares/upload.middleware'
 import { wrapAsync } from '~/utils/response'
 const router = express.Router()
 
+router.get('/me', authMiddleware.verifyAccessToken, wrapAsync(getMe))
+router.patch(
+  '/me',
+  authMiddleware.verifyAccessToken,
+  upload.single('avatar'),
+  uploadImageToCloudinary,
+  wrapAsync(updateMe)
+)
+router.patch('/me/password', authMiddleware.verifyAccessToken, wrapAsync(updateMyPassword))
 router.post(
   '/',
   authMiddleware.authUserRules(),
@@ -25,4 +34,3 @@ router.patch(
 )
 
 export default router
-  

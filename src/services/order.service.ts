@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { pick } from 'lodash'
 import { io, userSockets } from '~/app'
 import { STATUS } from '~/constants/httpStatus'
@@ -14,6 +15,21 @@ export const orderStatusName = {
 } as const
 
 type OrderStatus = keyof typeof orderStatusName
+
+const checkCustomerDone = async (customerId: string) => {
+  try {
+    const ordersOfCustomer = await OrderModel.find({
+      customer_id: customerId
+    }).lean()
+    const isNotDone = ordersOfCustomer.some((order) => {
+      return ![orderStatus.REJECTED, orderStatus.PAID].includes(order.status)
+    })
+    return !isNotDone
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
 
 const addOrder = async (orderRequest: OrderRequest) => {
   try {
@@ -34,6 +50,16 @@ const addOrder = async (orderRequest: OrderRequest) => {
 
     if (!products || products.length === 0) {
       throw new ErrorHandler(STATUS.NOT_ACCEPTABLE, 'Chưa chọn sản phẩm để đặt hàng')
+    }
+
+    const isDone = await checkCustomerDone(customer_id)
+    if (isDone) {
+      await TableModel.findOneAndUpdate(
+        {
+          table_number
+        },
+        { $inc: { current: 1 } }
+      )
     }
 
     for (const product of products) {
@@ -207,6 +233,7 @@ const getStatisticsOrder = async (query: StatisticOrderQuery) => {
     }
     const orders = await OrderModel.find(condition)
       .populate('product')
+      .populate('assignee')
       .sort({ createdAt: -1 })
       .skip(page * limit - limit)
       .limit(limit)
@@ -234,7 +261,7 @@ const getStatisticsOrder = async (query: StatisticOrderQuery) => {
 
 const updateOrder = async (order_id: string, query: OrderUpdateQuery) => {
   try {
-    const { product_id, buy_count, status } = query
+    const { product_id, buy_count, status, assignee } = query
     if (!order_id) {
       throw new ErrorHandler(STATUS.NOT_ACCEPTABLE, 'Chưa cung cấp đơn hàng')
     }
@@ -245,6 +272,7 @@ const updateOrder = async (order_id: string, query: OrderUpdateQuery) => {
     if (existOrder.status !== orderStatus.IN_PROGRESS && !status) {
       throw new ErrorHandler(STATUS.NOT_ACCEPTABLE, 'Món ăn hiện đã được chuẩn bị, không thể thay đổi đơn hàng')
     }
+    const isPrevDone = await checkCustomerDone(existOrder.customer_id)
     const updateData: any = {}
     if (status) {
       updateData.status = status
@@ -254,6 +282,9 @@ const updateOrder = async (order_id: string, query: OrderUpdateQuery) => {
     }
     if (buy_count) {
       updateData.buy_count = buy_count
+    }
+    if (assignee) {
+      updateData.assignee = assignee
     }
     const updatedData = await OrderModel.findByIdAndUpdate(
       order_id,
@@ -289,6 +320,26 @@ const updateOrder = async (order_id: string, query: OrderUpdateQuery) => {
         message,
         data: newData
       })
+    }
+
+    const isDone = await checkCustomerDone(existOrder.customer_id)
+
+    if (isDone) {
+      await TableModel.findOneAndUpdate(
+        {
+          table_number: existOrder.table_number
+        },
+        { $inc: { current: -1 } }
+      )
+    } else {
+      if (isPrevDone) {
+        await TableModel.findOneAndUpdate(
+          {
+            table_number: existOrder.table_number
+          },
+          { $inc: { current: 1 } }
+        )
+      }
     }
 
     const response = {

@@ -12,3 +12,15 @@ interface UserQuery {
   limit: number
   email: string
 }
+
+interface UpdateMe {
+  name: string
+  avatar: string
+  cloudinaryUrl: string
+}
+
+interface ChangePassword {
+  oldPassword: string
+  newPassword: string
+  confirmPassword: string
+}

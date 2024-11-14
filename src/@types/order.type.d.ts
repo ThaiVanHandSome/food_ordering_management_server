@@ -15,6 +15,7 @@ interface OrderUpdateQuery {
   product_id?: string
   buy_count?: string
   status?: string
+  assignee: string
 }
 
 interface StatisticOrderQuery {

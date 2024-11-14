@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import { ErrorHandler } from '~/utils/response'
 import { STATUS } from '~/constants/httpStatus'
+import { Request } from 'express'
 dotenv.config()
 
 export const signToken = (payload: string | object | Buffer, token_life: number | string) => {
@@ -35,4 +36,12 @@ export const verifyToken = (token: string) => {
       resolve(decoded as object)
     })
   })
+}
+
+export const getAccessTokenFromHeader = (req: Request) => {
+  const authHeader = req.headers['authorization']
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7, authHeader.length)
+  }
+  return null
 }

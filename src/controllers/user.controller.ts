@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
+import jwt from 'jsonwebtoken'
 import userService from '~/services/user.service'
+import { getAccessTokenFromHeader } from '~/utils/jwt'
 import { responseSuccess } from '~/utils/response'
 
 export const createUser = async (req: Request, res: Response) => {
@@ -8,6 +10,7 @@ export const createUser = async (req: Request, res: Response) => {
     const result = await userService.createUser(user)
     return responseSuccess(res, result)
   } catch (error) {
+    console.log(error)
     throw error
   }
 }
@@ -44,3 +47,41 @@ export const updateUser = async (req: Request, res: Response) => {
 //     return responseError(res, error)
 //   }
 // }
+
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const accessToken = getAccessTokenFromHeader(req)
+    const decoded: { email: string } = jwt.decode(accessToken as string) as { email: string }
+    const result = await userService.getMe(decoded?.email)
+    return responseSuccess(res, result)
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export const updateMe = async (req: Request, res: Response) => {
+  try {
+    const accessToken = getAccessTokenFromHeader(req)
+    const decoded: { email: string } = jwt.decode(accessToken as string) as { email: string }
+    const body: UpdateMe = req.body
+    const result = await userService.updateMe(decoded.email, body)
+    return responseSuccess(res, result)
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export const updateMyPassword = async (req: Request, res: Response) => {
+  try {
+    const accessToken = getAccessTokenFromHeader(req)
+    const decoded: { email: string } = jwt.decode(accessToken as string) as { email: string }
+    const body: ChangePassword = req.body
+    const result = await userService.updateMyPassword(decoded.email, body)
+    return responseSuccess(res, result)
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
