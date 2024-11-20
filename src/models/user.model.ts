@@ -36,6 +36,11 @@ const userSchema = new Schema(
       required: true,
       enum: [ROLE.EMPLOYEE, ROLE.ADMIN],
       default: ROLE.EMPLOYEE
+    },
+    isActive: {
+      type: Boolean,
+      required: true,
+      default: true
     }
   },
   {

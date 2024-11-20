@@ -13,7 +13,7 @@ const verifyAccessToken = async (req: Request, res: Response, next: NextFunction
       throw new ErrorHandler(STATUS.UNAUTHORIZED, 'Không tồn tại token')
     } catch (error) {
       console.log(error)
-      throw error
+      return next(error)
     }
   }
   throw new ErrorHandler(STATUS.UNAUTHORIZED, 'Token chưa được gửi đi')
@@ -39,16 +39,14 @@ const verifyAdmin = async (req: Request, res: Response, next: NextFunction) => {
   if (accessToken) {
     try {
       const decoded = (await verifyToken(accessToken)) as PayloadToken
-      console.log(decoded)
-
       if (decoded.role === 'ADMIN') return next()
       throw new ErrorHandler(STATUS.UNAUTHORIZED, 'Bạn không có quyền')
     } catch (error) {
       console.log(error)
-      throw error
+      return next(error)
     }
   }
   throw new ErrorHandler(STATUS.UNAUTHORIZED, 'Token chưa được gửi đi')
 }
 
-export default { authUserRules, verifyAccessToken , verifyAdmin}
+export default { authUserRules, verifyAccessToken, verifyAdmin }

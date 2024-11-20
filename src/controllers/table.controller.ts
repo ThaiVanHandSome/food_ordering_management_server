@@ -16,8 +16,6 @@ export const addTable = async (req: Request, res: Response) => {
 export const checkAvailableTable = async (req: Request, res: Response) => {
   try {
     const { table_number, token } = req.query
-    console.log(table_number, token)
-
     const result = await tableService.checkAvailableTable(parseInt(table_number as string), token as string)
     return responseSuccess(res, result)
   } catch (error) {
@@ -28,7 +26,9 @@ export const checkAvailableTable = async (req: Request, res: Response) => {
 
 export const getAllTables = async (req: Request, res: Response) => {
   try {
-    const result = await tableService.getAllTables()
+    const query: TableQuery = req.query as unknown as TableQuery
+    console.log(req.query)
+    const result = await tableService.getAllTables(query)
     return responseSuccess(res, result)
   } catch (error) {
     console.log(error)
@@ -52,6 +52,17 @@ export const deleteTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
     const result = await tableService.deleteTable(id)
+    return responseSuccess(res, result)
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export const leaveTable = async (req: Request, res: Response) => {
+  try {
+    const { table_number } = req.query
+    const result = await tableService.leaveTable(parseInt(table_number as string))
     return responseSuccess(res, result)
   } catch (error) {
     console.log(error)

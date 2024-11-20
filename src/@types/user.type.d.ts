@@ -4,6 +4,7 @@ interface UserRequest {
   email: string
   password: string
   role: string
+  isActive: boolean
   cloudinaryUrl: string
 }
 

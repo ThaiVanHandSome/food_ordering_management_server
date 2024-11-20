@@ -17,6 +17,12 @@ const login = async (loginData: Login) => {
         email: 'Email không tồn tại trong hệ thống'
       })
     }
+    if (!existUser.isActive) {
+      throw new ErrorHandler(
+        STATUS.NOT_ACCEPTABLE,
+        'Tài khoản đã bị khóa. Xin vui lòng liên hệ quản trị viên để được mở lại tài khoản'
+      )
+    }
     const match = compareValue(password, existUser.password)
     if (!match) {
       throw new ErrorHandler(STATUS.UNPROCESSABLE_ENTITY, {
@@ -27,6 +33,11 @@ const login = async (loginData: Login) => {
       email,
       role: existUser.role
     }
+
+    await TokenModel.deleteMany({
+      user: existUser._id
+    })
+
     const accessToken = await signToken(payloadToken, process.env.EXPIRE_ACCESS_TOKEN as string)
     const refreshToken = await signToken(payloadToken, process.env.EXPIRE_REFRESH_TOKEN as string)
     await new TokenModel({
@@ -83,4 +94,23 @@ const refreshToken = async (refreshToken: string) => {
   }
 }
 
-export default { login, refreshToken }
+const logout = async (email: string) => {
+  try {
+    const existUser = await UserModel.findOne({ email }).lean()
+    if (!existUser) {
+      throw new ErrorHandler(STATUS.NOT_FOUND, 'Không tìm thấy người dùng')
+    }
+    await TokenModel.deleteOne({
+      user: existUser._id
+    })
+    const response = {
+      message: 'Đăng xuất thành công'
+    }
+    return response
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export default { login, refreshToken, logout }

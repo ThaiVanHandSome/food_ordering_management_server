@@ -37,10 +37,12 @@ const createUser = async (userData: UserRequest) => {
 
 const getAllUser = async (query: UserQuery) => {
   try {
+    // eslint-disable-next-line prefer-const
     let { page = 1, limit = 6, email } = query
     page = Number(page)
     limit = Number(limit)
-    let condition: any = {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const condition: any = {}
     if (email) {
       condition.email = email
     }
@@ -70,17 +72,10 @@ const getAllUser = async (query: UserQuery) => {
 
 const updateUser = async (id: string, body: UserRequest) => {
   try {
-    console.log(id)
     const existUser = await UserModel.findById(id).lean()
     if (!existUser) {
       throw new ErrorHandler(STATUS.NOT_FOUND, 'User không tồn tại')
     }
-    // const existUserByEmail = await UserModel.findOne({ email: body.email })
-    // if (existUserByEmail) {
-    //   throw new ErrorHandler(STATUS.NOT_FOUND, {
-    //     message: 'User đã tồn tại'
-    //   })
-    // }
     let newBody = { ...body }
     if (body.cloudinaryUrl) {
       newBody = {
@@ -95,9 +90,13 @@ const updateUser = async (id: string, body: UserRequest) => {
         password: encryptPassword
       }
     }
-    const updatedUser = await UserModel.findByIdAndUpdate(id, {
-      $set: newBody
-    })
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      id,
+      {
+        $set: newBody
+      },
+      { new: true }
+    )
     const response = {
       message: 'Cập nhật người dùng thành công',
       data: updatedUser
@@ -108,25 +107,6 @@ const updateUser = async (id: string, body: UserRequest) => {
     throw error
   }
 }
-
-// const deleteUser = async (userId: string) => {
-//   try {
-//     const user = await UserModel.findById(userId)
-//     if (!user) {
-//       throw new ErrorHandler(STATUS.NOT_FOUND, 'Không tìm thấy người dùng')
-//     }
-//     await UserModel.deleteOne({
-//       _id: userId
-//     })
-//     const response = {
-//       message: 'Xóa user thành công'
-//     }
-//     return response
-//   } catch (error) {
-//     console.log(error)
-//     throw error;
-//   }
-// }
 
 const getMe = async (email: string) => {
   try {
@@ -158,9 +138,13 @@ const updateMe = async (email: string, body: UpdateMe) => {
         avatar: body.cloudinaryUrl
       }
     }
-    const newUser = await UserModel.findByIdAndUpdate(existUser._id, {
-      $set: newBody
-    }).lean()
+    const newUser = await UserModel.findByIdAndUpdate(
+      existUser._id,
+      {
+        $set: newBody
+      },
+      { new: true }
+    ).lean()
     const response = {
       message: 'Cập nhật thông tin thành công',
       data: newUser

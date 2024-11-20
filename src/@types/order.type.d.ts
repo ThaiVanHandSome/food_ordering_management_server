@@ -24,4 +24,6 @@ interface StatisticOrderQuery {
   table_number: string | number
   customer_name: string
   status: string
+  startDate: string
+  endDate: string
 }

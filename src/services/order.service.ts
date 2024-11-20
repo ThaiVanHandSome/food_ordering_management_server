@@ -16,21 +16,6 @@ export const orderStatusName = {
 
 type OrderStatus = keyof typeof orderStatusName
 
-const checkCustomerDone = async (customerId: string) => {
-  try {
-    const ordersOfCustomer = await OrderModel.find({
-      customer_id: customerId
-    }).lean()
-    const isNotDone = ordersOfCustomer.some((order) => {
-      return ![orderStatus.REJECTED, orderStatus.PAID].includes(order.status)
-    })
-    return !isNotDone
-  } catch (error) {
-    console.log(error)
-    throw error
-  }
-}
-
 const addOrder = async (orderRequest: OrderRequest) => {
   try {
     const { table_number, customer_name, customer_id, products } = orderRequest
@@ -52,16 +37,6 @@ const addOrder = async (orderRequest: OrderRequest) => {
       throw new ErrorHandler(STATUS.NOT_ACCEPTABLE, 'Chưa chọn sản phẩm để đặt hàng')
     }
 
-    const isDone = await checkCustomerDone(customer_id)
-    if (isDone) {
-      await TableModel.findOneAndUpdate(
-        {
-          table_number
-        },
-        { $inc: { current: 1 } }
-      )
-    }
-
     for (const product of products) {
       if (product.buy_count === 0 || !product.id) continue
 
@@ -75,10 +50,6 @@ const addOrder = async (orderRequest: OrderRequest) => {
       })
 
       await newOrder.save()
-
-      await ProductModel.findByIdAndUpdate(product.id, {
-        $inc: { sold: product.buy_count }
-      })
     }
 
     io.emit('addOrder', {
@@ -174,11 +145,11 @@ const getStatisticsTable = async () => {
 const getStatisticsOrder = async (query: StatisticOrderQuery) => {
   try {
     // eslint-disable-next-line prefer-const
-    let { page = 1, limit = 6, customer_name, table_number, status } = query
+    let { page = 1, limit = 6, customer_name, table_number, status, startDate, endDate } = query
     page = Number(page)
     limit = Number(limit)
     table_number = parseInt(table_number as string)
-    let condition = {}
+    let condition: any = {}
     if (customer_name) {
       condition = {
         ...condition,
@@ -189,6 +160,19 @@ const getStatisticsOrder = async (query: StatisticOrderQuery) => {
       condition = {
         ...condition,
         table_number
+      }
+    }
+    if (startDate || endDate) {
+      condition.createdAt = {}
+      if (startDate) {
+        const start = new Date(startDate)
+        start.setHours(0, 0, 0, 0)
+        condition.createdAt.$gte = start
+      }
+      if (endDate) {
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        condition.createdAt.$lte = end
       }
     }
     const res = {
@@ -272,7 +256,7 @@ const updateOrder = async (order_id: string, query: OrderUpdateQuery) => {
     if (existOrder.status !== orderStatus.IN_PROGRESS && !status) {
       throw new ErrorHandler(STATUS.NOT_ACCEPTABLE, 'Món ăn hiện đã được chuẩn bị, không thể thay đổi đơn hàng')
     }
-    const isPrevDone = await checkCustomerDone(existOrder.customer_id)
+    // const isPrevDone = await checkCustomerDone(existOrder.customer_id)
     const updateData: any = {}
     if (status) {
       updateData.status = status
@@ -322,23 +306,15 @@ const updateOrder = async (order_id: string, query: OrderUpdateQuery) => {
       })
     }
 
-    const isDone = await checkCustomerDone(existOrder.customer_id)
-
-    if (isDone) {
-      await TableModel.findOneAndUpdate(
-        {
-          table_number: existOrder.table_number
-        },
-        { $inc: { current: -1 } }
-      )
+    if (status === orderStatus.PAID) {
+      await ProductModel.findByIdAndUpdate(String(newProd?._id), {
+        $inc: { sold: (updatedData as unknown as { buy_count: number }).buy_count }
+      })
     } else {
-      if (isPrevDone) {
-        await TableModel.findOneAndUpdate(
-          {
-            table_number: existOrder.table_number
-          },
-          { $inc: { current: 1 } }
-        )
+      if ((existOrder as unknown as { status: string }).status === orderStatus.PAID) {
+        await ProductModel.findByIdAndUpdate(String(newProd?._id), {
+          $inc: { sold: -1 * (updatedData as unknown as { buy_count: number }).buy_count }
+        })
       }
     }
 

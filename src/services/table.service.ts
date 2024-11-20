@@ -1,6 +1,6 @@
 import { STATUS } from '~/constants/httpStatus'
 import { tableStatus } from '~/enums/tableStatus.enum'
-import { TableModel } from '~/models'
+import { OrderModel, TableModel } from '~/models'
 import { ErrorHandler } from '~/utils/response'
 
 const addTable = async (table: TableRequest) => {
@@ -16,6 +16,24 @@ const addTable = async (table: TableRequest) => {
       return response
     }
     throw new ErrorHandler(STATUS.NOT_ACCEPTABLE, 'Bàn đã tồn tại')
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+const leaveTable = async (table_number: number) => {
+  try {
+    await TableModel.findOneAndUpdate(
+      {
+        table_number
+      },
+      { $inc: { current: -1 } }
+    )
+    const response = {
+      message: 'Rời bàn thành công'
+    }
+    return response
   } catch (error) {
     console.log(error)
     throw error
@@ -59,13 +77,42 @@ const checkAvailableTable = async (table_number: number, token: string) => {
   }
 }
 
-const getAllTables = async () => {
+const getAllTables = async (query: TableQuery) => {
   try {
-    const tables = await TableModel.find().lean()
+    // eslint-disable-next-line prefer-const
+    let { page = '1', limit = '8', table_number } = query
+    page = Number(page)
+    limit = Number(limit)
+
+    console.log(table_number)
+
+    const condition: any = {}
+    if (table_number) {
+      condition.table_number = Number(table_number)
+    }
+
+    const totalTables = await TableModel.countDocuments(condition)
+
+    const tables = await TableModel.find(condition)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean()
+
+    const totalPages = Math.ceil(totalTables / limit)
+
     const response = {
       message: 'Lấy tất cả bàn ăn thành công',
-      data: tables
+      data: {
+        content: tables,
+        pagination: {
+          page,
+          limit,
+          total: totalTables,
+          pageSize: totalPages
+        }
+      }
     }
+
     return response
   } catch (error) {
     console.log(error)
@@ -144,4 +191,4 @@ const deleteTable = async (id_table: string) => {
   }
 }
 
-export default { addTable, checkAvailableTable, getAllTables, updateTable, deleteTable }
+export default { addTable, checkAvailableTable, getAllTables, updateTable, deleteTable, leaveTable }
